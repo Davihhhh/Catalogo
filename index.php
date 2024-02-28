@@ -1,18 +1,26 @@
 <?php
-	if(isset($_SESSION['user']))
+	if(isset($_SESSION['UTENTE']))
 	{	}
 	else
-	{ header("location:login.php"); exit(); }
+	{ header("location:login.html"); exit(); }
 ?>
 <html>
 	<head>
 		<h1>Benvenuto nel database Catalogo<br> </h1> 
 	</head>
 	<body>
-			<form action="riceca.php" method="POST">
-            	<input type="submit" name="tutte" value="filtra"/>
-        	</form>		
-		</div>
+		<form action="riceca.php" method="POST">
+            <input type="submit" name="tutte" value="filtra"/>
+        </form>	
+		<form action="aggiungi.php" method="POST">
+            <input type="submit" name="tutte" value="aggiungi"/>
+        </form>
+		<form action="modifica.php" method="POST">
+            <input type="submit" name="tutte" value="modifica"/>
+        </form>	
+		<form action="elimina.php" method="POST">
+            <input type="submit" name="tutte" value="elimina"/>
+        </form>
 	</body>	
 </html>
 <?php 
@@ -23,7 +31,10 @@
 
 	$conn = mysqli_connect($servername, $username, $password, $database);
 	if (!$conn) {
-      die("Connessione fallita: " . mysqli_connect_error());
+      	die("Connessione fallita: " . mysqli_connect_error());
+		header("location:index.html");
+		unset($_SESSION);
+		exit();
     }
 	else
 	{	

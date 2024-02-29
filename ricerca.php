@@ -1,68 +1,28 @@
 <html>
     <head>
-        <style>
-            * {box-sizing: border-box;}
-
-            body {
-                margin: 0;
-                font-family: Arial, Helvetica, sans-serif;
-                }
-
-            .topnav {
-                overflow: hidden;
-                background-color: #e9e9e9;
-                }
-
-            .topnav a {
-                float: left;
-                display: block;
-                color: black;
-                text-align: center;
-                padding: 14px 16px;
-                text-decoration: none;
-                font-size: 17px;
-                }
-
-            .topnav a:hover {
-                background-color: #ddd;
-                color: black;
-                }
-
-            .topnav a.active {
-                background-color: #2196F3;
-                color: white;
-                }
-
-            .topnav input[type=text] {
-                float: right;
-                padding: 6px;
-                margin-top: 8px;
-                margin-right: 16px;
-                border: none;
-                font-size: 17px;
-                }
-
-            .topnav input[type=text] {
-                    border: 1px solid #ccc;  
-                }
-        </style>
+        <link rel="stylesheet" href="catalogo.css">
     </head>
     <body>        
+        <a href="index.php">Torna all'indice</a>
         <form method="POST">
-            <select name="Catalogo" id="catalogo">
+            <select name="Catalogo" id="catalogo" required>
                 <option value="dispositivi">Dispositivi</option>
                 <option value="sedi">Sedi</option>
                 <option value="case_produttrici">Case Produttrici</option>
                 <option value="prodotti">Prodotti</option>
                 <option value="prodotto_sede">Prodotto Sede</option>
             </select>
+            <br>
             <label for="cerca">Cerca qualcosa...</label>
-            <input type="text" id="cerca">
+            <input type="text" id="cerca" required>
+            <br>
+            <input type="submit" value="Cerca">
         </form>
+        
     </body>
 </html>
 <?php
-    if(isset($_SESSION["UTENTE"]) || isset($_SESSION["filtra"]))
+    if(isset($_SESSION["UTENTE"]) && isset($_SESSION["filtra"]) && isset($_SESSION['database']) && isset($_SESSION['chiave']) && isset($_SESSION['operatore']) && isset($_SESSION['server']))
     {}
     else 
     {
@@ -73,57 +33,144 @@
 <?php
     if($_SERVER['REQUEST_METHOD'] == "POST")
     {
-        $servername = "localhost";
-        $username = "root";
-        $password = "root";
-        $database = "catalogo";
+        if(isset($_POST['cerca']) && isset($_POST['catalogo']))
+        {
+            $servername = $_SESSION['server'];
+            $username = $_SESSION['operatore'];
+            $password = $_SESSION['chiave'];
+            $database =$_SESSION['database'];
 
-        $conn = mysqli_connect($servername, $username, $password, $database);
-        if (!$conn) {
-        die("Connessione fallita: " . mysqli_connect_error());
-        }
-        else 
-        {	   
-            $filterKeyword = $_POST['cerca'];
-            $selectedTable = $_POST['catalogo'];
+            $conn = mysqli_connect($servername, $username, $password, $database);
+            if (!$conn) {
+                die("Connessione fallita: " . mysqli_connect_error());
+            }
+            else 
+            {	   
+                $filterKeyword = $_POST['cerca'];
+                $selectedTable = $_POST['catalogo'];
 
-            $query = "SELECT * FROM $selectedTable WHERE CONCAT_WS('',";
-            $query .= implode(", ", array_map(function($column) { return "COALESCE($column, '')"; }, getColumns($selectedTable)));
-            $query .= ") LIKE '%$filterKeyword%';";
-        
-            $result = mysqli_query($conn, $query);
+                $query = "SELECT * FROM $selectedTable WHERE CONCAT_WS('',";
+                $query .= implode(", ", array_map(function($column) { return "COALESCE($column, '')"; }, getColumns($selectedTable)));
+                $query .= ") LIKE '%$filterKeyword%';";
+            
+                $result = mysqli_query($conn, $query);
 
-            // Controlla se ci sono risultati
-            if (mysqli_num_rows($result) > 0) {
-                // Inizia la tabella HTML
-                echo "<table border='1'>";
-                echo "<tr>";
-                // Ottieni i nomi delle colonne
-                while ($fieldinfo = mysqli_fetch_field($result)) {
-                    echo "<th>" . $fieldinfo->name . "</th>";
-                }
-                echo "</tr>";
-
-                // Stampare i dati
-                while ($row = mysqli_fetch_assoc($result)) {
+                if (mysqli_num_rows($result) > 0) {
+                    echo "<table border='1'>";
+                    
                     echo "<tr>";
-                    foreach ($row as $key => $value) {
-                        echo "<td>" . $value . "</td>";
+                    while ($fieldinfo = mysqli_fetch_field($result)) {
+                        echo "<th>" . $fieldinfo->name . "</th>";
                     }
                     echo "</tr>";
+
+                    while ($row = mysqli_fetch_assoc($result)) {
+                        echo "<tr><form method='POST' action='modifica.php'>";
+                        foreach ($row as $key => $value) {
+                            echo "<td>" . $value . "</td>";
+                        }
+                        echo "<td><form method='post' action='{$_SERVER['PHP_SELF']}' onsubmit='return confirm(\"Sei sicuro di voler eliminare questa riga?\")'>
+                                    <input type='hidden' name='selected_table' value='$selectedTable'>
+                                    <input type='hidden' name='delete_row' value='" . htmlentities(json_encode($row)) . "'>
+                                    <input type='submit' value='Elimina'>
+                                    </form></td>";
+            
+                        echo "<td><form method='post' action='{$_SERVER['PHP_SELF']}'>
+                                    <input type='hidden' name='selected_table' value='$selectedTable'>
+                                    <input type='hidden' name='edit_row' value='" . htmlentities(json_encode($row)) . "'>
+                                    <input type='submit' value='Modifica'>
+                                    </form></td>";
+            
+                        echo "</tr>";                        
+                    }
+
+                    echo "</table>";                                  
+                } 
+                else {
+                    echo "Nessun risultato trovato.";
                 }
-                // Chiudi la tabella HTML
-                echo "</table>";
-            } else {
-                // Se non ci sono risultati
-                echo "Nessun risultato trovato.";
+
+                mysqli_free_result($result);
+
+                mysqli_close($conn);
+            }
+        }
+        else
+        {
+            echo "<script type='text/javascript'>alert('Inserisci tutti i campi richiesti!');</script>"
+        }
+        function getColumns($table)
+        {
+            global $conn;
+            $columns = array();
+
+            $result = $conn->query("SHOW COLUMNS FROM $table;");
+
+            if ($result && $result->num_rows > 0) {
+                while ($row = $result->fetch_assoc()) {
+                    $columns[] = $row['Field'];
+                }
+            }
+            return $columns;
+        }
+        if (isset($_POST['delete_row'])) {
+            $deleteRow = json_decode($_POST['delete_row'], true);
+
+            $whereClause = array();
+            foreach ($deleteRow as $column => $value) {
+                $whereClause[] = "$column = '$value'";
             }
 
-            // Rilascia la risorsa del risultato
-            mysqli_free_result($result);
+            $deleteQuery = "DELETE FROM $selectedTable WHERE " . implode(' AND ', $whereClause);
+            $conn->query($deleteQuery);
+        }
+        if (isset($_POST['edit_row'])) {
+            $editRow = json_decode($_POST['edit_row'], true);
 
-            // Chiudi la connessione al database
-            mysqli_close($conn);
+            $columns = getColumns($selectedTable);
+
+            if (is_array($columns) && count($columns) > 0) {
+                echo "<form method='post' action='{$_SERVER['PHP_SELF']}'>";
+                echo "<input type='hidden' name='selected_table' value='$selectedTable'>";
+
+                foreach ($columns as $column) {
+                    $value = isset($editRow[$column]) ? $editRow[$column] : '';
+                    echo "<label for='$column'>$column:</label>";
+                    echo "<input type='text' name='$column' value='$value'>";
+                }
+
+                echo "<input type='hidden' name='edit_row_info' value='" . htmlentities(json_encode($editRow)) . "'>";
+                echo "<input type='hidden' name='selected_table_for_edit' value='$selectedTable'>";
+
+                echo "<input type='submit' name='update_data' value='Aggiorna'>";
+                echo "</form>";
+            } else {
+                echo "Errore: Impossibile ottenere le colonne dalla tabella $selectedTable.";
+            }
+        }
+
+        if (isset($_POST['update_data'])) {
+            $editRow = json_decode($_POST['edit_row_info'], true);
+
+            $updateData = array();
+
+            foreach ($columns as $column) {
+                $updateData[$column] = isset($_POST[$column]) ? $_POST[$column] : '';
+            }
+
+            $updateQuery = "UPDATE $selectedTable SET ";
+            foreach ($updateData as $column => $value) {
+                $updateQuery .= "$column = '$value', ";
+            }
+            $updateQuery = rtrim($updateQuery, ', ');
+            $updateQuery .= " WHERE ";
+
+            foreach ($editRow as $column => $value) {
+                $updateQuery .= "$column = '$value' AND ";
+            }
+            $updateQuery = rtrim($updateQuery, 'AND ');
+
+            $conn->query($updateQuery);
         }
     }
 ?>

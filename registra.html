@@ -1,1 +1,38 @@
+<?php
+	session_start();
 
+    $servername = "localhost";
+    $username = "basic";
+    $password = "basic";
+    $database = "catalogo";
+    
+    $conn = new mysqli($servername, $username, $password, $database);
+    
+    if ($conn->connect_error) {
+        die("Connessione fallita: " . $conn->connect_error);
+    }
+    else if(isset($_POST['utentenew']) && isset($_POST['passwordnew'])) {
+        $new_username = $_POST['utentenew'];
+        $new_password = $_POST['passwordnew'];
+    
+        $check_sql = "SELECT * FROM users WHERE username='$new_username'";
+        $check_result = $conn->query($check_sql);
+    
+        if ($check_result->num_rows > 0) {
+            echo "Utente già esistente.";
+            echo '<br><a href="index.html">Torna alla pagina di login</a>';
+        } 
+        else {
+            $sql = "INSERT INTO users (username, password, admin) VALUES ('$new_username', '$new_password', 0)";
+    
+            if ($conn->query($sql) === TRUE) {
+                echo "Registrazione effettuata con successo.<br>";
+                echo '<a href="index.html">Torna alla pagina di login</a>';
+            } else {
+                echo "Errore durante la registrazione: " . $conn->error;
+            }
+        }
+    }
+    
+    $conn->close();
+?>

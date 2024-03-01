@@ -1,5 +1,5 @@
 <?php
-	if(isset($_SESSION['UTENTE']))
+	if(isset($_SESSION['operatore']))
 	{	}
 	else
 	{ header("location:login.html"); exit(); }

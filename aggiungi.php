@@ -1,5 +1,5 @@
 <?php
-    if(isset($_SESSION["UTENTE"]) && isset($_SESSION["filtra"]) && isset($_SESSION['database']) && isset($_SESSION['chiave']) && isset($_SESSION['operatore']) && isset($_SESSION['server']))
+    if(isset($_SESSION['operatore']))
     {}
     else 
     {

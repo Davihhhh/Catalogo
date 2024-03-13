@@ -1,20 +1,40 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <link rel="stylesheet" href="catalogo.css">
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-</head>
-<body>
-    <form action="registra.php" method="POST">
-        Inserisci le credenziali con cui vuoi registrarti. <br>
-        <label for="utente">Utente:</label>
-        <input type="text" id="utente" name="utentenew" required>
+<?php
+	session_start();
+    if($_SERVER['REQUEST_METHOD'] == "POST")
+    {
+        $servername = "localhost";
+        $username = "root";
+        $password = "banana";
+        $database = "catalogo";
         
-        <label for="password">Password:</label>
-        <input type="password" id="password" name="passwordnew" required>        
+        $conn = new mysqli($servername, $username, $password, $database);
         
-        <input type="submit" value="Submit">
-    </form>
-</body>
-</html>
+        if ($conn->connect_error) {
+            die("Connessione fallita: " . $conn->connect_error);
+        }
+        else if(isset($_POST['utentenew']) && isset($_POST['passwordnew'])) {
+            $new_username = $_POST['utentenew'];
+            $new_password = $_POST['passwordnew'];
+            $now = date("Y-m-d H:i:s");
+            $check_sql = "SELECT * FROM utenti WHERE Nome='$new_username'";
+            $result = mysqli_query($conn, $check_sql);
+        
+            if (mysqli_num_rows($result) > 0) {
+                echo "Utente già esistente.";
+                echo '<br><a href="index.html">Torna alla pagina iniziale</a>';
+            } 
+            else {
+                $sql = "INSERT INTO utenti (username, password, admin) VALUES ('$new_username', '$new_password', '$now')";
+        
+                if ($conn->query($sql) === TRUE) {
+                    echo "Registrazione effettuata con successo.<br>";
+                    echo '<a href="index.html">Torna alla pagina di login</a>';
+                } else {
+                    echo "Errore durante la registrazione: " . $conn->error;
+                }
+            }
+        }
+        
+        $conn->close();
+    }
+?>

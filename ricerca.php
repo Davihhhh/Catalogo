@@ -5,7 +5,7 @@
             </head>
             <body>        
                 <a href="index.php">Torna all indice</a>
-                <form method="POST">
+                <form method="POST" "<?php echo htmlspecialchars($_SERVER["PHP_SELF"]); ?>">
                     <select name="Catalogo" id="catalogo" required>
                         <option value="dispositivi">Dispositivi</option>
                         <option value="sedi">Sedi</option>
@@ -25,76 +25,77 @@
 ?>
 <?php
     if($_SERVER['REQUEST_METHOD'] == "POST" && isset($_SESSION['operatore']))
-    {    }
+    {  
+        if(isset($_POST['cerca']) && isset($_POST['catalogo']))
+        {
+            $servername = "localhost";
+            $username = "root";
+            $password = "banana";
+            $database = "catalogo";
+            $conn = mysqli_connect($servername, $username, $password, $database);
+            if (!$conn) {
+                die("Connessione fallita: " . mysqli_connect_error());
+            }
+            else 
+            {	   
+                $filterKeyword = $_POST['cerca'];
+                $selectedTable = $_POST['catalogo'];
+    
+                $query = "SELECT * FROM $selectedTable WHERE CONCAT_WS('',";
+                $query .= implode(", ", array_map(function($column) { return "COALESCE($column, '')"; }, getColumns($selectedTable)));
+                $query .= ") LIKE '%$filterKeyword%';";
+            
+                $result = mysqli_query($conn, $query);
+    
+                if (mysqli_num_rows($result) > 0) {
+                    echo "<table border='1'>";
+                    
+                    echo "<tr>";
+                    while ($fieldinfo = mysqli_fetch_field($result)) {
+                        echo "<th>" . $fieldinfo->name . "</th>";
+                    }
+                    echo "</tr>";
+    
+                    while ($row = mysqli_fetch_assoc($result)) {
+                        echo "<tr><form method='POST' action='modifica.php'>";
+                        foreach ($row as $key => $value) {
+                            echo "<td>" . $value . "</td>";
+                        }
+                        echo "<td><form method='post' action='{$_SERVER['PHP_SELF']}' onsubmit='return confirm(\"Sei sicuro di voler eliminare questa riga?\")'>
+                                    <input type='hidden' name='selected_table' value='$selectedTable'>
+                                    <input type='hidden' name='delete_row' value='" . htmlentities(json_encode($row)) . "'>
+                                    <input type='submit' value='Elimina'>
+                                    </form></td>";
+            
+                        echo "<td><form method='post' action='{$_SERVER['PHP_SELF']}'>
+                                    <input type='hidden' name='selected_table' value='$selectedTable'>
+                                    <input type='hidden' name='edit_row' value='" . htmlentities(json_encode($row)) . "'>
+                                    <input type='submit' value='Modifica'>
+                                    </form></td>";
+            
+                        echo "</tr>";                        
+                    }
+    
+                    echo "</table>";                                  
+                } 
+                else {
+                    echo "Nessun risultato trovato.";
+                }
+    
+                mysqli_free_result($result);
+    
+                mysqli_close($conn);
+            }
+        }
+        else
+        {
+            echo "<script type='text/javascript'>alert('Inserisci tutti i campi richiesti!');</script>";
+        }
+    }
     else
     {
         header("location:login.html");
         exit();
-    }
-    if(isset($_POST['cerca']) && isset($_POST['catalogo']))
-    {
-        $servername = "localhost";
-        $username = "root";
-        $password = "banana";
-        $database = "catalogo";
-        $conn = mysqli_connect($servername, $username, $password, $database);
-        if (!$conn) {
-            die("Connessione fallita: " . mysqli_connect_error());
-        }
-        else 
-        {	   
-            $filterKeyword = $_POST['cerca'];
-            $selectedTable = $_POST['catalogo'];
-
-            $query = "SELECT * FROM $selectedTable WHERE CONCAT_WS('',";
-            $query .= implode(", ", array_map(function($column) { return "COALESCE($column, '')"; }, getColumns($selectedTable)));
-            $query .= ") LIKE '%$filterKeyword%';";
-        
-            $result = mysqli_query($conn, $query);
-
-            if (mysqli_num_rows($result) > 0) {
-                echo "<table border='1'>";
-                
-                echo "<tr>";
-                while ($fieldinfo = mysqli_fetch_field($result)) {
-                    echo "<th>" . $fieldinfo->name . "</th>";
-                }
-                echo "</tr>";
-
-                while ($row = mysqli_fetch_assoc($result)) {
-                    echo "<tr><form method='POST' action='modifica.php'>";
-                    foreach ($row as $key => $value) {
-                        echo "<td>" . $value . "</td>";
-                    }
-                    echo "<td><form method='post' action='{$_SERVER['PHP_SELF']}' onsubmit='return confirm(\"Sei sicuro di voler eliminare questa riga?\")'>
-                                <input type='hidden' name='selected_table' value='$selectedTable'>
-                                <input type='hidden' name='delete_row' value='" . htmlentities(json_encode($row)) . "'>
-                                <input type='submit' value='Elimina'>
-                                </form></td>";
-        
-                    echo "<td><form method='post' action='{$_SERVER['PHP_SELF']}'>
-                                <input type='hidden' name='selected_table' value='$selectedTable'>
-                                <input type='hidden' name='edit_row' value='" . htmlentities(json_encode($row)) . "'>
-                                <input type='submit' value='Modifica'>
-                                </form></td>";
-        
-                    echo "</tr>";                        
-                }
-
-                echo "</table>";                                  
-            } 
-            else {
-                echo "Nessun risultato trovato.";
-            }
-
-            mysqli_free_result($result);
-
-            mysqli_close($conn);
-        }
-    }
-    else
-    {
-        echo "<script type='text/javascript'>alert('Inserisci tutti i campi richiesti!');</script>";
     }
     function getColumns($table)
     {
@@ -110,6 +111,8 @@
         }
         return $columns;
     }
+?>
+<?php
     if (isset($_POST['delete_row'])) {
         $deleteRow = json_decode($_POST['delete_row'], true);
 

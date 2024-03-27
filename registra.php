@@ -7,11 +7,14 @@
         $password = "banana";
         $database = "catalogo";
         
-        $conn = new mysqli($servername, $username, $password, $database);
+		$conn = mysqli_connect($servername, $username, $password, $database);
         
-        if ($conn->connect_error) {
-            die("Connessione fallita: " . $conn->connect_error);
-        }
+        if (!$conn) {
+			die("Connessione fallita: " . mysqli_connect_error());
+			header("location:index.html");
+			unset($_SESSION);
+			exit();
+		}
         else if(isset($_POST['utentenew']) && isset($_POST['passwordnew'])) {
             $new_username = $_POST['utentenew'];
             $new_password = $_POST['passwordnew'];
@@ -24,7 +27,7 @@
                 echo '<br><a href="index.html">Torna alla pagina iniziale</a>';
             } 
             else {
-                $sql = "INSERT INTO utenti (username, password, admin) VALUES ('$new_username', '$new_password', '$now')";
+                $sql = "INSERT INTO utenti (Nome, Password, Data_Creazione) VALUES ('$new_username', '$new_password', '$now')";
         
                 if ($conn->query($sql) === TRUE) {
                     echo "Registrazione effettuata con successo.<br>";

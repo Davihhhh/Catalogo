@@ -1,17 +1,3 @@
-
-<html>
-	<head>
-		<h1>Benvenuto nel database Catalogo<br> </h1> 
-	</head>
-	<body>
-		<form action="ricerca.php" method="POST">
-            <input type="submit" name="filtrare" value="filtra"/>
-        </form>	
-		<form action="aggiungi.php" method="POST">
-            <input type="submit" name="aggiungere" value="aggiungi"/>
-        </form>		
-	</body>	
-</html>
 <?php 	
 	session_start();
 	if($_SERVER['REQUEST_METHOD'] == "POST")
@@ -25,18 +11,32 @@
 		$pswd = $_POST['password'];
 		$_SESSION['operatore'] = $utente;
 		$conn = mysqli_connect($servername, $username, $password, $database);
+
 		if (!$conn) {
 			die("Connessione fallita: " . mysqli_connect_error());
 			header("location:index.html");
 			unset($_SESSION);
 			exit();
 		}
-		else if(isset($_POST['utente']) && isset($_POST['password'])) {      
-			
+		else {      
 			$check_sql = "SELECT * FROM utenti WHERE Nome='$utente' AND Password='$pswd'";
 			$result = mysqli_query($conn, $check_sql);
-		
+			
 			if (mysqli_num_rows($result) > 0) {
+				echo 	'<html>
+							<head>
+								<h1>Benvenuto nel database Catalogo<br> </h1> 
+							</head>
+							<body>
+								<form action="ricerca.php" method="POST">
+									<input type="submit" name="filtrare" value="filtra"/>
+								</form>	
+								<form action="aggiungi.php" method="POST">
+									<input type="submit" name="aggiungere" value="aggiungi"/>
+								</form>		
+							</body>	
+						</html>';
+
 				$_SESSION['operatore'] = $utente;
 
 				echo "<h1>Tabelle</h1>";

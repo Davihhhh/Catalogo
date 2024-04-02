@@ -35,51 +35,54 @@
         $password = $_SESSION['chiave'];
         $database =$_SESSION['database'];
 
-        $conn = new mysqli($servername, $username, $password, $dbname);
-        $campi = array();
-        if ($conn->connect_error) {
-            die("Connessione fallita: " . $conn->connect_error);
-        }
-        else
+        try
         {
-            if(isset($_POST['seleziona']))
+            $conn = new mysqli($servername, $username, $password, $dbname);
+            $campi = array();
+            if ($conn->connect_error) {
+                die("Connessione fallita: " . $conn->connect_error);
+            }
+            else
             {
-                $selectedTable = $_POST['catalogo'];
+                if(isset($_POST['seleziona']))
+                {
+                    $selectedTable = $_POST['catalogo'];
 
-                $sql = "SELECT TOP 1 * FROM $selectedTable";
-                
-                if ($conn->query($sql) === TRUE) {
-                    while ($fieldinfo = mysqli_fetch_field($result)) {
-                        array_push($campi, $fieldinfo);
+                    $sql = "SELECT TOP 1 * FROM $selectedTable";
+                    
+                    if ($conn->query($sql) === TRUE) {
+                        while ($fieldinfo = mysqli_fetch_field($result)) {
+                            array_push($campi, $fieldinfo);
+                        }
                     }
+                    echo "<form method='POST'>";
+                    foreach ($campi as $campo) {
+                        echo "<label for=$campo>$campo</label>";
+                        echo "<input type='text' id='$campo' required>";
+                    }           
+                    echo "<input type='submit' value='aggiungi'>";       
+                    echo "</form>";    
                 }
-                echo "<form method='POST'>";
-                foreach ($campi as $campo) {
-                    echo "<label for=$campo>$campo</label>";
-                    echo "<input type='text' id='$campo' required>";
-                }           
-                echo "<input type='submit' value='aggiungi'>";       
-                echo "</form>";    
+                if(isset($_POST['aggiungi']))
+                {
+                    $selectedTable = $_POST['catalogo'];
+                    $valori = array();
+                    foreach ($campi as $campo) {
+                        array_push($valori, $_POST[$campo]);
+                    }   
+                    if (count($campi) == count($valori)) {
+
+                        $campi_string = implode(", ", $campi);                  
+                        $valori_string = "'" . implode("', '", $valori) . "'";
+
+                        $sql = "INSERT INTO $selectedTable ($campi_string) VALUES ($valori_string)";
+
+                    } else {
+                        echo "Errore: completa tutti i campi.";
+                    }                 
+                }
             }
-            if(isset($_POST['aggiungi']))
-            {
-                $selectedTable = $_POST['catalogo'];
-                $valori = array();
-                foreach ($campi as $campo) {
-                    array_push($valori, $_POST[$campo]);
-                }   
-                if (count($campi) == count($valori)) {
-
-                    $campi_string = implode(", ", $campi);                  
-                    $valori_string = "'" . implode("', '", $valori) . "'";
-
-                    $sql = "INSERT INTO $selectedTable ($campi_string) VALUES ($valori_string)";
-
-                } else {
-                    echo "Errore: completa tutti i campi.";
-                }                 
-            }
-        }
-        $conn->close();
+            $conn->close();
+        } catch (Exception $e) { echo "Aggiunta non disponibile"; }
     }
 ?>

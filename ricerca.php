@@ -24,14 +24,25 @@
         </html>';
 ?>
 <?php
-    if($_SERVER['REQUEST_METHOD'] == "POST" && isset($_SESSION['operatore']))
+    if($_SERVER['REQUEST_METHOD'] == "POST")
     {  
-        if(isset($_POST['cerca']) && isset($_POST['catalogo']))
+        
+    }
+    else
+    {
+        header("location:login.html");
+        exit();
+    }
+?>
+<?php 
+    if(isset($_POST['cerca']))
+    {
+        $servername = "localhost";
+        $username = "root";
+        $password = "banana";
+        $database = "catalogo";
+        try 
         {
-            $servername = "localhost";
-            $username = "root";
-            $password = "banana";
-            $database = "catalogo";
             $conn = mysqli_connect($servername, $username, $password, $database);
             if (!$conn) {
                 die("Connessione fallita: " . mysqli_connect_error());
@@ -40,13 +51,13 @@
             {	   
                 $filterKeyword = $_POST['cerca'];
                 $selectedTable = $_POST['catalogo'];
-    
+
                 $query = "SELECT * FROM $selectedTable WHERE CONCAT_WS('',";
                 $query .= implode(", ", array_map(function($column) { return "COALESCE($column, '')"; }, getColumns($selectedTable)));
                 $query .= ") LIKE '%$filterKeyword%';";
             
                 $result = mysqli_query($conn, $query);
-    
+
                 if (mysqli_num_rows($result) > 0) {
                     echo "<table border='1'>";
                     
@@ -55,7 +66,7 @@
                         echo "<th>" . $fieldinfo->name . "</th>";
                     }
                     echo "</tr>";
-    
+
                     while ($row = mysqli_fetch_assoc($result)) {
                         echo "<tr><form method='POST' action='modifica.php'>";
                         foreach ($row as $key => $value) {
@@ -75,28 +86,23 @@
             
                         echo "</tr>";                        
                     }
-    
+
                     echo "</table>";                                  
                 } 
                 else {
                     echo "Nessun risultato trovato.";
                 }
-    
+
                 mysqli_free_result($result);
-    
+
                 mysqli_close($conn);
             }
-        }
-        else
-        {
-            echo "<script type='text/javascript'>alert('Inserisci tutti i campi richiesti!');</script>";
-        }
+        } catch (Exception $e) { echo "Ricerca non disponibile."; }
     }
-    else
-    {
-        header("location:login.html");
-        exit();
-    }
+    //else
+    //{
+    //    echo "<script type='text/javascript'>alert('Inserisci tutti i campi richiesti!');</script>";
+    //}
     function getColumns($table)
     {
         global $conn;
